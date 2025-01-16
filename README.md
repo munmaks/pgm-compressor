@@ -1,13 +1,4 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/LZABp_05)
-
-# Projet Compresseur Quadtree
-
-## Groupe 4
-
-### Authors
-
-- [MUNAITPASOV Maksat](https://github.com/munmaks)
-- [BENVENISTE Alexandre ](https://github.com/SuRiz4)
+# Compressor Quadtree
 
 ## Aperçu
 
@@ -133,17 +124,7 @@ Pour nettoyer les fichiers de construction, exécutez :
 make clean
 ```
 
-### Répartition du travail
+## Authors
 
-- Maksat :
-
-  - Conversion du quadtree en fichier et inversement
-  - Filtrage pour la compression
-  - Options pour l'executable
-  - doxyfile + les commentaires utiles
-
-- Alexandre :
-
-  - Conversion du fichier PGM en pixmap et inversement
-  - Mode segmentation
-  - Rapport du projet
+- [MUNAITPASOV M.](https://github.com/munmaks)
+- [BENVENISTE A. ](https://github.com/SuRiz4)
