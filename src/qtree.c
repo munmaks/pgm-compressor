@@ -159,10 +159,8 @@ static unsigned short calculate_child_sum(QTree *tree, unsigned int child)
  * @param child the index of the first child
  * @return void
  */
-static void fill_quadtree_recursive(
-    QTree *qtree, Pixmap *pix,
-    unsigned int index, unsigned char niveau,
-    unsigned int line, unsigned int col)
+static void fill_quadtree_recursive(QTree *qtree, Pixmap *pix, unsigned int index,
+                                    unsigned char niveau, unsigned int line, unsigned int col)
 {
     unsigned int child_index = 0x0U;
     unsigned short child_sum = 0x0U;
@@ -241,9 +239,7 @@ extern void create_qtc_file(QTree *qtree, unsigned short width, const char *file
  * @param need_to_write true if we need to write the data
  * @return void
  */
-static void qtc_from_quadtree(
-    QTree *qtree, FileBit *filebit,
-    unsigned int *encoded_size, bool need_to_write)
+static void qtc_from_quadtree(QTree *qtree, FileBit *filebit, unsigned int *encoded_size, bool need_to_write)
 {
     unsigned int error = 0U;
     size_t i = 0UL;
@@ -385,6 +381,13 @@ extern void init_quadtree_from_file(QTree *tree, const char *file_name)
         parent_index = (i) ? (i - 1) / MAX_CHILD : (0UL);
         child_index = i * MAX_CHILD + 0x1U;
 
+        if (tree->nodes[parent_index].u)
+        {
+            tree->nodes[i].color = tree->nodes[parent_index].color;
+            tree->nodes[i].e = 0x0U;
+            tree->nodes[i].u = 0x1U;
+            continue;
+        }
         /* that's a leaf */
         if (child_index >= qtree_size)
         {
@@ -437,17 +440,16 @@ extern void init_quadtree_from_file(QTree *tree, const char *file_name)
     fBitclose(&in);
 }
 
-static void fill_pixmap_recursive(QTree *qtree, Pixmap *pix,
-                                  unsigned int index, unsigned char niveau,
-                                  unsigned int line, unsigned int col)
+static void fill_pixmap_recursive(QTree *qtree, Pixmap *pix, unsigned int index,
+                                  unsigned char niveau, unsigned int line, unsigned int col)
 {
-    unsigned int i = 0U, j = 0U, child_index = 0x0U, size = 1U << niveau;
+    unsigned int i = 0U, j = 0U, child_index = 0x0U, width = 1U << niveau;
 
     if (niveau > 0 && qtree->nodes[index].u)
     {
-        for (i = 0; i < size; ++i)
+        for (i = 0; i < width; ++i)
         {
-            for (j = 0; j < size; ++j)
+            for (j = 0; j < width; ++j)
             {
                 pix->data[(line + i) * pix->width + (col + j)] = qtree->nodes[index].color;
             }
@@ -510,19 +512,13 @@ extern void pixmap_from_quadtree(QTree *qtree, Pixmap *pix)
  */
 static double compute_average_variance(QTree *qtree)
 {
-    size_t qtree_size = 0UL, number_of_nodes = 0UL, i = 0UL;
     double sum = 0.0;
-    if (!qtree || !qtree->nodes)
-    {
-        return 0.0;
-    }
-    qtree_size = DETERMINE_QTREE_SIZE(qtree->niveau);
+    size_t qtree_size = DETERMINE_QTREE_SIZE(qtree->niveau), number_of_nodes = 0UL, i = 0UL;
     number_of_nodes = qtree_size - (1UL << (2UL * qtree->niveau));
     for (i = 0; i < qtree_size; ++i)
     {
         sum += qtree->nodes[i].variance;
     }
-
     return (qtree_size > 0) ? ((sum / (double)number_of_nodes)) : (0.0);
 }
 
@@ -534,13 +530,8 @@ static double compute_average_variance(QTree *qtree)
  */
 static double compute_max_variance(QTree *qtree)
 {
-    size_t qtree_size = 0UL, i = 0UL;
     double max_var = 0.0;
-    if (!qtree || !qtree->nodes)
-    {
-        return 0.0;
-    }
-    qtree_size = DETERMINE_QTREE_SIZE(qtree->niveau);
+    size_t i = 0UL, qtree_size = DETERMINE_QTREE_SIZE(qtree->niveau);
     for (i = 0; i < qtree_size; ++i)
     {
         if (qtree->nodes[i].variance > max_var)
@@ -603,9 +594,7 @@ static float calculate_variance(QTree *qtree, unsigned int index, unsigned int c
  * @param alpha the alpha value
  * @return unsigned int 1 if the node is uniform, 0 otherwise
  */
-static unsigned int filtrage(QTree *qtree,
-                             unsigned int index, int niveau,
-                             double sigma, double alpha)
+static unsigned int filtrage(QTree *qtree, unsigned int index, int niveau, double sigma, double alpha)
 {
     unsigned int s = 0U, child_index = 0U;
 

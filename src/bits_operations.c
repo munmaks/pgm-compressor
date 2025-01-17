@@ -10,42 +10,41 @@
  */
 #include "bits_operations.h"
 
+#ifndef _UCHAR_
+#define _UCHAR_
+#include <limits.h>
+typedef unsigned char uchar;
+#endif
+
 /****************************************************************/
 /****************************************************************/
 /************    LES FONCTIONS POUR BIT OPERATIONS    ***********/
 /****************************************************************/
 /****************************************************************/
 
-extern unsigned char fBitopen(
-    FileBit *__restrict__ f,
-    const char *__restrict__ path,
-    const char *__restrict__ mode)
+extern uchar fBitopen(FileBit *__restrict__ f, const char *__restrict__ path, const char *__restrict__ mode)
 {
     if (!(f->fich = fopen(path, mode)))
     {
         return 0;
     }
-    f->stock = 0U;
-    f->nbBit = 0U;
+    f->stock = f->nbBit = 0U;
     return 1;
 }
 
-extern void fBitinit(
-    FileBit *__restrict__ f,
-    FILE *__restrict__ fich)
+extern void fBitinit(FileBit *__restrict__ f, FILE *__restrict__ fich)
 {
     f->fich = fich;
-    f->stock = 0U;
-    f->nbBit = 0U;
+    f->stock = f->nbBit = 0U;
 }
 
 extern int fBitclose(FileBit *__restrict__ f)
 {
-    if (f->nbBit != 0)
+    if (f->nbBit)
     {
-        /* decaler a gauche les derniers bits si necessaire*/
-        if (f->nbBit != 8)
-            f->stock <<= 8 - f->nbBit;
+        /* shift left the remaining bits if necessary */
+        if (f->nbBit != CHAR_BIT)
+            f->stock <<= CHAR_BIT - f->nbBit;
         fputc(f->stock, f->fich);
     }
     return fclose(f->fich);
@@ -53,15 +52,15 @@ extern int fBitclose(FileBit *__restrict__ f)
 
 extern int fEcrireBit(FileBit *__restrict__ f, int bit)
 {
-    int coderetour = 1;
-    if (f->nbBit == 8)
+    int status = 0;
+    if (f->nbBit == CHAR_BIT)
     {
         f->nbBit = 0;
-        coderetour = fputc((int)f->stock, f->fich);
+        status = fputc(f->stock, f->fich);
     }
-    ++f->nbBit;
-    f->stock = (unsigned char)((f->stock << 1) | bit);
-    return coderetour;
+    ++(f->nbBit);
+    f->stock = (uchar)((f->stock << 1U) | bit);
+    return status;
 }
 
 extern int fLireBit(FileBit *__restrict__ f)
@@ -73,33 +72,39 @@ extern int fLireBit(FileBit *__restrict__ f)
         {
             return EOF;
         }
-        f->stock = (unsigned char)n;
-        f->nbBit = 8;
+        f->stock = (uchar)n;
+        f->nbBit = CHAR_BIT;
     }
-    --f->nbBit;
+    --(f->nbBit);
     return (f->stock >> f->nbBit) & 1;
 }
 
-extern void fEcritCharbin(FileBit *__restrict__ f, unsigned char n)
+extern void fEcritCharbin(FileBit *__restrict__ f, uchar n)
 {
     int i = 0;
     unsigned int mask = 0U; /* to test, if mask should be 1 or 0 at the beginning */
-    for (i = 7; i >= 0; --i)
+    for (i = CHAR_BIT - 1; i >= 0; --i)
     {
         mask = 1U << i;
-
-        /* code before:  fEcrireBit(f, (n & mask) != 0); */
-        (void)fEcrireBit(f, (n & mask) != 0); /* ignore return value; we don't need it */
+        /* ignore return value; we don't need it */
+        (void)fEcrireBit(f, (n & mask) != 0U);
     }
 }
 
-extern unsigned char fLireCharbin(FileBit *__restrict__ f)
+extern uchar fLireCharbin(FileBit *__restrict__ f)
 {
+    int bit = 0;
     char i = 0;
-    unsigned char c = 0;
-    for (i = 0; i < 8; ++i)
+    uchar c = 0;
+    for (i = 0; i < CHAR_BIT; ++i)
     {
-        c = (unsigned char)((c << 1U) | fLireBit(f));
+        bit = fLireBit(f); /* handle EOF */
+        if (bit == EOF)
+        {
+            fprintf(stderr, "Error: EOF in fLireCharbin()!\n");
+            return 0;
+        }
+        c = (uchar)((c << 1U) | (uchar)bit);
     }
     return c;
 }
